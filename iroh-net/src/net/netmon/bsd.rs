@@ -31,32 +31,53 @@ impl RouteMonitor {
 
         let handle = tokio::task::spawn(async move {
             trace!("AF_ROUTE monitor started");
-
-            // TODO: cleaner shutdown
-            let mut buffer = vec![0u8; 2048];
             loop {
-                match socket.read(&mut buffer).await {
-                    Ok(read) => {
-                        trace!("AF_ROUTE: read {} bytes", read);
-                        match super::super::interfaces::bsd::parse_rib(
-                            libc::NET_RT_DUMP,
-                            &buffer[..read],
-                        ) {
-                            Ok(msgs) => {
-                                if contains_interesting_message(&msgs) {
-                                    sender.send(NetworkMessage::Change).await.ok();
+                // TODO: cleaner shutdown
+                let mut buffer = vec![0u8; 2048];
+                loop {
+                    match socket.read(&mut buffer).await {
+                        Ok(read) => {
+                            trace!("AF_ROUTE: read {} bytes", read);
+                            match super::super::interfaces::bsd::parse_rib(
+                                libc::NET_RT_DUMP,
+                                &buffer[..read],
+                            ) {
+                                Ok(msgs) => {
+                                    if contains_interesting_message(&msgs) {
+                                        sender.send(NetworkMessage::Change).await.ok();
+                                    }
+                                }
+                                Err(err) => {
+                                    warn!("AF_ROUTE: failed to parse rib: {:?}", err);
                                 }
                             }
-                            Err(err) => {
-                                warn!("AF_ROUTE: failed to parse rib: {:?}", err);
-                            }
+                        }
+
+                        Err(err) => {
+                            warn!("AF_ROUTE: error reading: {:?}", err);
+                            break;
                         }
                     }
-                    Err(err) => {
-                        warn!("AF_ROUTE: error reading: {:?}", err);
-                    }
+                }
+
+                let Ok(new_socket) =
+                    socket2::Socket::new(libc::AF_ROUTE.into(), socket2::Type::RAW, None)
+                else {
+                    break;
+                };
+
+                if new_socket.set_nonblocking(true).is_err() {
+                    break;
+                };
+
+                let socket_std: std::os::unix::net::UnixStream = new_socket.into();
+                match socket_std.try_into() {
+                    Ok(s) => socket = s,
+                    Err(_) => break,
                 }
             }
+
+            warn!("AF_ROUTE monitor failed");
         });
 
         Ok(RouteMonitor { handle })
