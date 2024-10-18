@@ -17,6 +17,18 @@ const EXAMPLE_ALPN: &[u8] = b"n0/iroh/examples/magic/0";
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
     println!("\nlisten example!\n");
+
+    // stop with SIGINT (ctrl-c)
+
+    let _ = run().await;
+    println!("DROPPED");
+
+    std::future::pending::<()>().await;
+
+    Ok(())
+}
+
+async fn run() -> anyhow::Result<()> {
     let secret_key = SecretKey::generate();
     println!("secret key: {secret_key}");
 
@@ -82,37 +94,8 @@ async fn main() -> anyhow::Result<()> {
             conn.remote_address()
         );
 
-        // spawn a task to handle reading and writing off of the connection
-        tokio::spawn(async move {
-            // accept a bi-directional QUIC connection
-            // use the `quinn` APIs to send and recv content
-            let (mut send, mut recv) = conn.accept_bi().await?;
-            debug!("accepted bi stream, waiting for data...");
-            let message = recv.read_to_end(100).await?;
-            let message = String::from_utf8(message)?;
-            println!("received: {message}");
-
-            let message = format!("hi! you connected to {me}. bye bye");
-            send.write_all(message.as_bytes()).await?;
-            // call `finish` to close the connection gracefully
-            send.finish()?;
-
-            // We sent the last message, so wait for the client to close the connection once
-            // it received this message.
-            let res = tokio::time::timeout(Duration::from_secs(3), async move {
-                let closed = conn.closed().await;
-                if !matches!(closed, ConnectionError::ApplicationClosed(_)) {
-                    println!("node {node_id} disconnected with an error: {closed:#}");
-                }
-            })
-            .await;
-            if res.is_err() {
-                println!("node {node_id} did not disconnect within 3 seconds");
-            }
-            Ok::<_, anyhow::Error>(())
-        });
+        return Ok(());
     }
-    // stop with SIGINT (ctrl-c)
 
     Ok(())
 }
