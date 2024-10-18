@@ -15,7 +15,9 @@ const EXAMPLE_ALPN: &[u8] = b"n0/iroh/examples/magic/0";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
     println!("\nlisten example!\n");
 
     // stop with SIGINT (ctrl-c)

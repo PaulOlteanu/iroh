@@ -17,8 +17,14 @@ use crate::magicsock::{ConnectionType, ConnectionTypeStream};
 #[derive(Debug)]
 pub(super) struct RttHandle {
     // We should and some point use this to propagate panics and errors.
-    pub(super) _handle: JoinHandle<()>,
+    pub(super) handle: JoinHandle<()>,
     pub(super) msg_tx: mpsc::Sender<RttMessage>,
+}
+
+impl Drop for RttHandle {
+    fn drop(&mut self) {
+        self.handle.abort();
+    }
 }
 
 impl RttHandle {
@@ -29,13 +35,13 @@ impl RttHandle {
             tick: Notify::new(),
         };
         let (msg_tx, msg_rx) = mpsc::channel(16);
-        let _handle = tokio::spawn(
+        let handle = tokio::spawn(
             async move {
                 actor.run(msg_rx).await;
             }
             .instrument(info_span!("rtt-actor")),
         );
-        Self { _handle, msg_tx }
+        Self { handle, msg_tx }
     }
 }
 

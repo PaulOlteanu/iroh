@@ -277,6 +277,14 @@ pub(super) struct RelayActor {
     cancel_token: CancellationToken,
 }
 
+impl Drop for RelayActor {
+    fn drop(&mut self) {
+        for (_, handle) in self.active_relay.values() {
+            handle.abort()
+        }
+    }
+}
+
 impl RelayActor {
     pub(super) fn new(msock: Arc<MagicSock>, msg_sender: mpsc::Sender<ActorMessage>) -> Self {
         let cancel_token = CancellationToken::new();
