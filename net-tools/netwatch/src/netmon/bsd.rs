@@ -58,6 +58,8 @@ impl RouteMonitor {
                     }
                 }
 
+                tokio::time::sleep(Duration::from_secs(2)).await;
+
                 let Ok(new_socket) =
                     socket2::Socket::new(libc::AF_ROUTE.into(), socket2::Type::RAW, None)
                 else {
