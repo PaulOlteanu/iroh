@@ -58,3 +58,8 @@ iroh-router = { path = "./iroh-router" }
 iroh-gossip = { git = "https://github.com/n0-computer/iroh-gossip", branch = "main" }
 iroh-docs = { git = "https://github.com/n0-computer/iroh-docs", branch = "main" }
 iroh-blobs = { git = "https://github.com/n0-computer/iroh-blobs", branch = "main" }
+
+tikv-jemalloc-sys = { git = "https://github.com/PaulOlteanu/jemallocator", rev = "1b668d9" }
+tikv-jemallocator = { git = "https://github.com/PaulOlteanu/jemallocator", rev = "1b668d9" }
+tikv-jemalloc-ctl = { git = "https://github.com/PaulOlteanu/jemallocator", rev = "1b668d9" }
+

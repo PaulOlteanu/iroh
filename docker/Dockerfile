@@ -13,7 +13,7 @@ RUN cargo chef prepare  --recipe-path recipe.json
 FROM chef AS rust_builder
 
 RUN update-ca-certificates
-RUN apk add --no-cache musl-dev openssl-dev pkgconfig
+RUN apk add --no-cache musl-dev openssl-dev pkgconfig build-base
 
 COPY --from=planner /iroh/recipe.json recipe.json
 # Build dependencies - this is the caching Docker layer!
