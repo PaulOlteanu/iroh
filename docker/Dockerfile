@@ -68,6 +68,7 @@ CMD [""]
 FROM alpine:latest AS iroh-dns-server
 
 RUN apk update && apk add ca-certificates go perf curl && update-ca-certificates 
+RUN go install github.com/google/pprof@latest
 
 # Copy our build, changing owndership to distroless-provided "nonroot" user,
 # (65532:65532)
