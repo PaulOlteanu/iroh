@@ -63,6 +63,12 @@ ttl_cache = "0.5.1"
 url = "2.5.0"
 z32 = "1.1.1"
 
+jemalloc_pprof = "0.6"
+tikv-jemallocator = { version = "0.6.0", features = [
+    "profiling",
+    "unprefixed_malloc_on_supported_platforms",
+] }
+
 [dev-dependencies]
 hickory-resolver = "=0.25.0-alpha.2"
 iroh-net = { version = "0.28.0" }

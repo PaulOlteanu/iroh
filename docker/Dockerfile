@@ -67,7 +67,7 @@ CMD [""]
 ### Target image
 FROM alpine:latest AS iroh-dns-server
 
-RUN apk update && apk add ca-certificates && update-ca-certificates
+RUN apk update && apk add ca-certificates pprof && update-ca-certificates 
 
 # Copy our build, changing owndership to distroless-provided "nonroot" user,
 # (65532:65532)
