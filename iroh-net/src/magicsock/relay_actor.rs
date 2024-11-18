@@ -303,9 +303,8 @@ impl RelayActor {
                     trace!("shutting down");
                     break;
                 }
-                // `ping_tasks` being empty is a normal situation - in fact it starts empty
-                // until a `MaybeCloseRelaysOnRebind` message is received.
-                Some(task_result) = self.ping_tasks.join_next() => {
+
+                Some(task_result) = self.ping_tasks.join_next(), if !self.ping_tasks.is_empty() => {
                     match task_result {
                         Ok((url, ping_success)) => {
                             if !ping_success {

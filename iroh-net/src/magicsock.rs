@@ -1768,19 +1768,17 @@ impl Actor {
             }
         }
 
-        let mut receiver_closed = false;
         let mut portmap_watcher_closed = false;
         let mut link_change_closed = false;
         loop {
             inc!(Metrics, actor_tick_main);
             tokio::select! {
-                msg = self.msg_receiver.recv(), if !receiver_closed => {
+                msg = self.msg_receiver.recv() => {
                     let Some(msg) = msg else {
-                        trace!("tick: magicsock receiver closed");
+                        info!("tick: magicsock receiver closed");
                         inc!(Metrics, actor_tick_other);
 
-                        receiver_closed = true;
-                        continue;
+                        break;
                     };
 
                     trace!(?msg, "tick: msg");
@@ -1796,7 +1794,7 @@ impl Actor {
                 }
                 change = portmap_watcher.changed(), if !portmap_watcher_closed => {
                     if change.is_err() {
-                        trace!("tick: portmap watcher closed");
+                        warn!("tick: portmap watcher closed");
                         inc!(Metrics, actor_tick_other);
 
                         portmap_watcher_closed = true;
@@ -1831,7 +1829,7 @@ impl Actor {
                 }
                 is_major = link_change_r.recv(), if !link_change_closed => {
                     let Some(is_major) = is_major else {
-                        trace!("tick: link change receiver closed");
+                        warn!("tick: link change receiver closed");
                         inc!(Metrics, actor_tick_other);
 
                         link_change_closed = true;
@@ -1854,6 +1852,9 @@ impl Actor {
                 }
             }
         }
+
+        info!("magicsock actor exiting");
+        Ok(())
     }
 
     async fn handle_network_change(&mut self, is_major: bool) {
