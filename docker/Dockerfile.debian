@@ -32,7 +32,7 @@ RUN cargo build --release --all-features
 FROM chef AS bytehound
 WORKDIR /app
 
-RUN git clone https://github.com/koute/bytehound.git && cd bytehound && cargo build --release -p bytehound-preload
+RUN git clone https://github.com/koute/bytehound.git && cd bytehound && cargo build --release -p bytehound-preload && cargo build --release -p bytehound-cli
 
 FROM debian:bookworm-slim AS iroh-dns-server
 WORKDIR /app
@@ -45,6 +45,7 @@ RUN apt-get update && \
 COPY --from=builder /root/go/bin/pprof /usr/local/bin
 COPY --from=builder /app/target/release/iroh-dns-server /app/iroh-dns-server
 COPY --from=bytehound /app/bytehound/target/release/libbytehound.so /app/libbytehound.so
+COPY --from=bytehound /app/bytehound/target/release/bytehound /app/bytehound
 
 RUN chmod +x /app/iroh-dns-server
 
