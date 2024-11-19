@@ -1,0 +1,49 @@
+FROM lukemathwalker/cargo-chef:latest-rust-1.81-bookworm AS chef
+WORKDIR /app
+
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+
+RUN apt-get update && \
+    apt-get install -y python3-pip python3-launchpadlib software-properties-common
+
+RUN add-apt-repository ppa:longsleep/golang-backports
+
+RUN apt-get update && \
+    apt-get install -y golang-go && \
+    rm -rf /var/lib/apt/lists
+
+RUN go install github.com/google/pprof@latest
+
+# Build deps
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Build app
+COPY . .
+RUN cargo build --release --all-features
+
+# FROM chef as console
+# RUN cargo install tokio-console --git "https://github.com/tokio-rs/console.git"
+
+FROM debian:bookworm-slim AS iroh-dns-server
+WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y ca-certificates curl htop wget binutils tar cron procps util-linux sysstat iproute2 tcpdump linux-perf nicstat ethtool tiptop \
+    heaptrack gdb && \
+    rm -rf /var/lib/apt/lists
+
+COPY --from=builder /root/go/bin/pprof /usr/local/bin
+COPY --from=builder /app/target/release/iroh-dns-server /app/iroh-dns-server
+RUN chmod +x /app/iroh-dns-server
+
+# expose the default ports
+# dns, metrics
+EXPOSE 53/udp 9090
+ENTRYPOINT ["/app/iroh-dns-server"]
+CMD [""]
+
