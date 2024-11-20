@@ -176,7 +176,9 @@ impl ActiveRelay {
 
                 if matches!(
                     err,
-                    relay::client::ClientError::Closed | relay::client::ClientError::IPDisabled
+                    relay::client::ClientError::Closed
+                        | relay::client::ClientError::IPDisabled
+                        | relay::client::ClientError::Receive(_)
                 ) {
                     // drop client
                     return ReadResult::Break;
