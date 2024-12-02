@@ -71,5 +71,5 @@ simple-dns = "0.6"
 all-features = true
 
 [[bench]]
-name = "publish"
+name = "inserts"
 harness = false
