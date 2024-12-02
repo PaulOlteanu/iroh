@@ -27,8 +27,7 @@ pub async fn put(
 
     let updated = state
         .store
-        .insert(signed_packet, PacketSource::PkarrPublish)
-        .await?;
+        .insert(signed_packet, PacketSource::PkarrPublish)?;
     info!(key = %label, ?updated, "pkarr upsert");
     Ok(StatusCode::NO_CONTENT)
 }

@@ -59,10 +59,17 @@ url = "2.5"
 z32 = "1.1.1"
 
 [dev-dependencies]
+criterion = { version = "0.5.1", features = ["tokio"] }
 hickory-resolver = "=0.25.0-alpha.2"
 iroh = { version = "0.28.0", path = "../iroh" }
 iroh-test = { version = "0.28.0", path = "../iroh-test" }
 pkarr = { version = "2.2.0", features = ["rand"] }
+rayon = "1.10"
+simple-dns = "0.6"
 
 [package.metadata.docs.rs]
 all-features = true
+
+[[bench]]
+name = "publish"
+harness = false

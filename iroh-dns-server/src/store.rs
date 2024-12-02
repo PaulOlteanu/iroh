@@ -141,7 +141,7 @@ impl ZoneStore {
     /// pubkey.
     // allow unused async: this will be async soon.
     #[allow(clippy::unused_async)]
-    pub async fn insert(&self, signed_packet: SignedPacket, _source: PacketSource) -> Result<bool> {
+    pub fn insert(&self, signed_packet: SignedPacket, _source: PacketSource) -> Result<bool> {
         let pubkey = PublicKeyBytes::from_signed_packet(&signed_packet);
         if self.store.upsert(signed_packet)? {
             inc!(Metrics, pkarr_publish_update);
