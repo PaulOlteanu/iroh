@@ -1,11 +1,13 @@
 //! The main server which combines the DNS and HTTP(S) servers.
 
+use std::time::Duration;
+
 use anyhow::Result;
 use iroh_metrics::metrics::start_metrics_server;
 use tracing::info;
 
 use crate::{
-    config::Config,
+    config::{Config, StoreType},
     dns::{DnsHandler, DnsServer},
     http::HttpServer,
     state::AppState,
@@ -14,7 +16,7 @@ use crate::{
 
 /// Spawn the server and run until the `Ctrl-C` signal is received, then shutdown.
 pub async fn run_with_config_until_ctrl_c(config: Config) -> Result<()> {
-    let mut store = ZoneStore::persistent(Config::signed_packet_store_path()?)?;
+    let mut store = get_store(&config)?;
     if let Some(bootstrap) = config.mainline_enabled() {
         info!("mainline fallback enabled");
         store = store.with_mainline_fallback(bootstrap);
@@ -24,6 +26,19 @@ pub async fn run_with_config_until_ctrl_c(config: Config) -> Result<()> {
     info!("shutdown");
     server.shutdown().await?;
     Ok(())
+}
+
+fn get_store(config: &Config) -> anyhow::Result<ZoneStore> {
+    let store = match config.store_config.store_type {
+        StoreType::Persistent => ZoneStore::persistent(Config::signed_packet_store_path()?)?,
+        StoreType::Memory => ZoneStore::in_memory()?,
+        StoreType::Evictable { ttl } => {
+            let duration = Duration::from_secs(ttl);
+            ZoneStore::evictable(duration)?
+        }
+    };
+
+    Ok(store)
 }
 
 /// The iroh-dns server.

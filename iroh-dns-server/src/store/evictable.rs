@@ -47,6 +47,7 @@ impl SignedPacketStore for EvictableStore {
     }
 
     fn get(&self, key: &PublicKeyBytes) -> Result<Option<SignedPacket>> {
+        println!("HERE");
         Ok(self.store.get(key))
     }
 

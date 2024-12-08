@@ -44,12 +44,27 @@ pub struct Config {
     /// Config for the mainline lookup.
     pub mainline: Option<MainlineConfig>,
 
-    /// Type of store to use
-    pub store_type: StoreType,
+    /// Config for the zone store.
+    pub store_config: StoreConfig,
 
     /// Config for pkarr rate limit
     #[serde(default)]
     pub pkarr_put_rate_limit: RateLimitConfig,
+}
+
+/// Words
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct StoreConfig {
+    /// Type of store to use
+    pub store_type: StoreType,
+}
+
+impl Default for StoreConfig {
+    fn default() -> Self {
+        Self {
+            store_type: StoreType::Persistent,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -61,7 +76,10 @@ pub enum StoreType {
     Memory,
     /// An in-memory store, with a max age, in seconds, for packets. After this duration,
     /// packets are removed.
-    Evictable(u32),
+    Evictable {
+        /// Time
+        ttl: u64,
+    },
 }
 
 /// The config for the metrics server.
@@ -202,7 +220,7 @@ impl Default for Config {
                 rr_aaaa: None,
                 rr_ns: Some("ns1.irohdns.example.".to_string()),
             },
-            store_type: StoreType::Persistent,
+            store_config: StoreConfig::default(),
             metrics: None,
             mainline: None,
             pkarr_put_rate_limit: RateLimitConfig::default(),

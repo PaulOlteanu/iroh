@@ -1,0 +1,19 @@
+pkarr_put_rate_limit = "disabled"
+
+[dns]
+port = 5300
+default_soa = "dns1.irohdns.example hostmaster.irohdns.example 0 10800 3600 604800 3600"
+default_ttl = 30
+origins = ["irohdns.example", "."]
+rr_a = "127.0.0.1"
+rr_ns = "ns1.irohdns.example."
+
+[http]
+port = 8080
+
+[store_config.store_type.Evictable]
+ttl = 30
+
+[mainline]
+enabled = false
+
