@@ -194,9 +194,7 @@ impl ZoneCache {
         name: &Name,
         record_type: RecordType,
     ) -> Option<Arc<RecordSet>> {
-        println!("resolving");
         let zone = if let Some(zone) = self.cache.get(pubkey) {
-            println!("here");
             trace!("cache hit {}", pubkey.to_z32());
             zone
         } else if let Some(zone) = self.dht_cache.get(pubkey) {
@@ -214,7 +212,6 @@ impl ZoneCache {
         name: &Name,
         record_type: RecordType,
     ) -> Result<Option<Arc<RecordSet>>> {
-        println!("insert and resolve");
         let pubkey = PublicKeyBytes::from_signed_packet(signed_packet);
         self.insert(signed_packet)?;
         Ok(self.resolve(&pubkey, name, record_type))
