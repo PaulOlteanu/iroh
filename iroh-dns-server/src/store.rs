@@ -44,10 +44,10 @@ pub struct ZoneStore {
 
 impl ZoneStore {
     /// Create a persistent store
-    pub fn persistent(path: impl AsRef<Path>) -> Result<Self> {
-        let packet_store = SignedPacketStore::persistent(path)?;
-        Ok(Self::new(packet_store))
-    }
+    // pub fn persistent(path: impl AsRef<Path>) -> Result<Self> {
+    //     let packet_store = SignedPacketStore::persistent(path)?;
+    //     Ok(Self::new(packet_store))
+    // }
 
     /// Create an in-memory store.
     pub fn in_memory() -> Result<Self> {

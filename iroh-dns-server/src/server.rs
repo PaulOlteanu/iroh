@@ -14,7 +14,8 @@ use crate::{
 
 /// Spawn the server and run until the `Ctrl-C` signal is received, then shutdown.
 pub async fn run_with_config_until_ctrl_c(config: Config) -> Result<()> {
-    let mut store = ZoneStore::persistent(Config::signed_packet_store_path()?)?;
+    // let mut store = ZoneStore::persistent(Config::signed_packet_store_path()?)?;
+    let mut store = ZoneStore::in_memory()?;
     if let Some(bootstrap) = config.mainline_enabled() {
         info!("mainline fallback enabled");
         store = store.with_mainline_fallback(bootstrap);
