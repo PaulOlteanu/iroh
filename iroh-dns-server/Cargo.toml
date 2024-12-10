@@ -17,6 +17,7 @@ axum-server = { version = "0.7", features = ["tls-rustls-no-provider"] }
 base64-url = "3.0"
 bytes = "1.7"
 clap = { version = "4.5.1", features = ["derive"] }
+dashmap = "6.1"
 derive_more = { version = "1.0.0", features = [
     "debug",
     "display",
@@ -32,7 +33,11 @@ http = "1.0.0"
 iroh-metrics = "0.29"
 lru = "0.12.3"
 parking_lot = "0.12.1"
-pkarr = { version = "2.2.0", features = [ "async", "relay", "dht"], default-features = false }
+pkarr = { version = "2.2.0", features = [
+    "async",
+    "relay",
+    "dht",
+], default-features = false }
 rcgen = "0.13"
 redb = "2.0.0"
 regex = "1.10.3"
