@@ -64,7 +64,7 @@ url = "2.5"
 z32 = "1.1.1"
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
-tikv-jemallocator = "0.6"
+tikv-jemallocator = { version = "0.6", default-features = false }
 
 [dev-dependencies]
 hickory-resolver = "=0.25.0-alpha.2"
