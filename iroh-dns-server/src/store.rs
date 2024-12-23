@@ -90,8 +90,7 @@ impl ZoneStore {
 
     /// Create a new zone store.
     pub fn new(store: Arc<dyn SignedPacketStore + Send + Sync>) -> Self {
-        // let zone_cache = ZoneCache::new(DEFAULT_CACHE_CAPACITY);
-        let zone_cache = ZoneCache::new(1);
+        let zone_cache = ZoneCache::new(DEFAULT_CACHE_CAPACITY);
         Self {
             store,
             cache: Arc::new(Mutex::new(zone_cache)),
