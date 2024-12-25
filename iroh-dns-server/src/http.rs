@@ -15,6 +15,7 @@ use axum::{
     routing::get,
     Router,
 };
+use http::StatusCode;
 use iroh_metrics::{inc, inc_by};
 use serde::{Deserialize, Serialize};
 use tokio::{net::TcpListener, task::JoinSet};
@@ -226,6 +227,7 @@ pub(crate) fn create_app(state: AppState, rate_limit_config: &RateLimitConfig) -
             },
         )
         .route("/healthcheck", get(|| async { "OK" }))
+        .route("/mem_profile", get(mem_profile_handler))
         .route("/", get(|| async { "Hi!" }))
         .with_state(state);
 
@@ -234,6 +236,18 @@ pub(crate) fn create_app(state: AppState, rate_limit_config: &RateLimitConfig) -
         .layer(cors)
         .layer(trace)
         .route_layer(middleware::from_fn(metrics_middleware))
+}
+
+async fn mem_profile_handler() -> impl IntoResponse {
+    let mut prof_ctl = jemalloc_pprof::PROF_CTL.as_ref().unwrap().lock().await;
+    if prof_ctl.activated() {
+        let pprof = prof_ctl
+            .dump_pprof()
+            .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+        Ok(pprof)
+    } else {
+        Err((StatusCode::FORBIDDEN, "profiling not enabled".to_string()))
+    }
 }
 
 /// Record request metrics.
