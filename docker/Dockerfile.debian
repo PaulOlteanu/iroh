@@ -42,7 +42,7 @@ ENTRYPOINT ["/iroh-relay"]
 CMD [""]
 
 ### Target image
-FROM debian:bookworm-slim AS iroh-relay
+FROM debian:bookworm-slim AS iroh-dns-server
 
 RUN apt-get update && \
     apt-get install -y ca-certificates curl htop wget binutils tar procps util-linux && \
