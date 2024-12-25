@@ -37,6 +37,11 @@ hyper = { version = "1", features = ["server", "client", "http1"] }
 hyper-util = "0.1.1"
 iroh-base = { version = "0.30.0", path = "../iroh-base", default-features = false, features = ["key", "relay"] }
 iroh-metrics = { version = "0.30.0", default-features = false }
+jemalloc_pprof = { version = "0.6", optional = true }
+tikv-jemallocator = { version = "0.6.0", optional = true, features = [
+  "profiling",
+  "unprefixed_malloc_on_supported_platforms",
+] }
 num_enum = "0.7"
 pin-project = "1"
 postcard = { version = "1", default-features = false, features = [
@@ -124,6 +129,8 @@ server = [
     "dep:reloadable-state",
     "dep:rustls-cert-reloadable-resolver",
     "dep:rustls-cert-file-reader",
+    "dep:jemalloc_pprof",
+    "dep:tikv-jemallocator",
 ]
 metrics = ["iroh-metrics/metrics"]
 test-utils = []

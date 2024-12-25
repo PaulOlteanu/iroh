@@ -438,6 +438,24 @@ impl Service<Request<Incoming>> for RelayService {
         }
         // Otherwise handle the relay connection as normal.
 
+        if req.uri().path().contains("mem_profile") {
+            let f = async move {
+                let mut prof_ctl = jemalloc_pprof::PROF_CTL
+                    .as_ref()
+                    .expect("jemalloc pprof should be installed")
+                    .lock()
+                    .await;
+                if prof_ctl.activated() {
+                    let pprof = prof_ctl.dump_pprof().unwrap_or_default();
+                    Ok(Response::new(body_full(pprof)))
+                } else {
+                    Ok(Response::new(body_full(vec![])))
+                }
+            };
+
+            return Box::pin(f);
+        }
+
         // Check all other possible endpoints.
         let uri = req.uri().clone();
         if let Some(res) = self.0.handlers.get(&(req.method().clone(), uri.path())) {

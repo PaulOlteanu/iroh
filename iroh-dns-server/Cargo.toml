@@ -30,6 +30,11 @@ hickory-server = { version = "=0.25.0-alpha.4", features = ["dns-over-rustls", "
 http = "1.0.0"
 humantime-serde = "1.1.1"
 iroh-metrics = { version = "0.30.0" }
+jemalloc_pprof = { version = "0.6" }
+tikv-jemallocator = { version = "0.6.0", features = [
+  "profiling",
+  "unprefixed_malloc_on_supported_platforms",
+] }
 lru = "0.12.3"
 pkarr = { version = "2.2.0", features = [ "async", "relay", "dht"], default-features = false }
 rcgen = "0.13"
