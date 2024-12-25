@@ -1,4 +1,4 @@
-use std::{future::Future, path::Path, result, time::Duration};
+use std::{future::Future, path::Path, result, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
@@ -7,6 +7,7 @@ use pkarr::{system_time, SignedPacket};
 use redb::{
     backends::InMemoryBackend, Database, MultimapTableDefinition, ReadableTable, TableDefinition,
 };
+use timedmap::TimedMap;
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, trace};
@@ -21,16 +22,12 @@ const UPDATE_TIME_TABLE: MultimapTableDefinition<[u8; 8], SignedPacketsKey> =
 
 #[derive(Debug)]
 pub struct SignedPacketStore {
-    send: mpsc::Sender<Message>,
-    cancel: CancellationToken,
-    _write_thread: IoThread,
-    _evict_thread: IoThread,
+    store: Arc<TimedMap<PublicKeyBytes, SignedPacket>>,
 }
 
 impl Drop for SignedPacketStore {
     fn drop(&mut self) {
         // cancel the actor
-        self.cancel.cancel();
         // after cancellation, the two threads will be joined
     }
 }
@@ -259,53 +256,45 @@ impl SignedPacketStore {
     }
 
     pub fn open(db: Database, options: Options) -> Result<Self> {
-        // create tables
-        let write_tx = db.begin_write()?;
-        let _ = Tables::new(&write_tx)?;
-        write_tx.commit()?;
-        let (send, recv) = mpsc::channel(1024);
-        let send2 = send.clone();
-        let cancel = CancellationToken::new();
-        let cancel2 = cancel.clone();
-        let cancel3 = cancel.clone();
-        let actor = Actor {
-            db,
-            recv: PeekableReceiver::new(recv),
-            cancel: cancel2,
-            options,
-        };
-        // start an io thread and donate it to the tokio runtime so we can do blocking IO
-        // inside the thread despite being in a tokio runtime
-        let _write_thread = IoThread::new("packet-store-actor", move || actor.run())?;
-        let _evict_thread = IoThread::new("packet-store-evict", move || {
-            evict_task(send2, options, cancel3)
-        })?;
-        Ok(Self {
-            send,
-            cancel,
-            _write_thread,
-            _evict_thread,
-        })
+        let store = Arc::new(TimedMap::new());
+        Ok(Self { store })
     }
 
     pub async fn upsert(&self, packet: SignedPacket) -> Result<bool> {
-        let (tx, rx) = oneshot::channel();
-        self.send.send(Message::Upsert { packet, res: tx }).await?;
-        Ok(rx.await?)
+        let key = PublicKeyBytes::from_signed_packet(&packet);
+
+        let mut replaced = false;
+        if let Some(existing) = self.store.get(&key) {
+            if existing.more_recent_than(&packet) {
+                return Ok(false);
+            } else {
+                replaced = true;
+            }
+        }
+
+        self.store.insert(key, packet, Duration::from_secs(60 * 4));
+
+        if replaced {
+            inc!(Metrics, store_packets_updated);
+        } else {
+            inc!(Metrics, store_packets_inserted);
+        }
+
+        Ok(true)
     }
 
     pub async fn get(&self, key: &PublicKeyBytes) -> Result<Option<SignedPacket>> {
-        let (tx, rx) = oneshot::channel();
-        self.send.send(Message::Get { key: *key, res: tx }).await?;
-        Ok(rx.await?)
+        Ok(self.store.get(key))
     }
 
     pub async fn remove(&self, key: &PublicKeyBytes) -> Result<bool> {
-        let (tx, rx) = oneshot::channel();
-        self.send
-            .send(Message::Remove { key: *key, res: tx })
-            .await?;
-        Ok(rx.await?)
+        let updated = self.store.remove(key).is_some();
+
+        if updated {
+            inc!(Metrics, store_packets_removed)
+        }
+
+        Ok(updated)
     }
 }
 
