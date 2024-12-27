@@ -18,10 +18,10 @@ base64-url = "3.0"
 bytes = "1.7"
 clap = { version = "4.5.1", features = ["derive"] }
 derive_more = { version = "1.0.0", features = [
-    "debug",
-    "display",
-    "into",
-    "from",
+  "debug",
+  "display",
+  "into",
+  "from",
 ] }
 dirs-next = "2.0.0"
 futures-lite = "2.5"
@@ -33,9 +33,9 @@ iroh-metrics = "0.29"
 lru = "0.12.3"
 parking_lot = "0.12.1"
 pkarr = { version = "2.2.0", features = [
-    "async",
-    "relay",
-    "dht",
+  "async",
+  "relay",
+  "dht",
 ], default-features = false }
 rcgen = "0.13"
 redb = "2.0.0"
@@ -45,11 +45,11 @@ rustls-pemfile = { version = "2.1" }
 serde = { version = "1", features = ["derive"] }
 struct_iterable = "0.1.1"
 strum = { version = "0.26", features = ["derive"] }
-timedmap = "1.0"
+timedmap = { git = "https://github.com/PaulOlteanu/timedmap-rs", rev = "a02cc25" }
 tokio = { version = "1.36.0", features = ["full"] }
 tokio-rustls = { version = "0.26", default-features = false, features = [
-    "logging",
-    "ring",
+  "logging",
+  "ring",
 ] }
 tokio-rustls-acme = { version = "0.6", features = ["axum"] }
 tokio-stream = "0.1.14"
