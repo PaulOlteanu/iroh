@@ -4685,8 +4685,10 @@ dependencies = [
 [[package]]
 name = "timedmap"
 version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0cc430736149d1428180bd452a3fdc981a29e818ee7513929c7d4c73f24df778"
+source = "git+https://github.com/PaulOlteanu/timedmap-rs?rev=a02cc25#a02cc25d6100d88e3a691a372f57e0570f68266d"
+dependencies = [
+ "dashmap 6.1.0",
+]
 
 [[package]]
 name = "tinystr"
