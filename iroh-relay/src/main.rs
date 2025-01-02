@@ -18,6 +18,7 @@ use iroh_relay::{
     },
     server::{self as relay, ClientConnRateLimit, QuicConfig},
 };
+use mimalloc::MiMalloc;
 use serde::{Deserialize, Serialize};
 use tokio_rustls_acme::{caches::DirCache, AcmeConfig};
 use tracing::debug;
@@ -27,7 +28,7 @@ use tracing_subscriber::{prelude::*, EnvFilter};
 const DEV_MODE_HTTP_PORT: u16 = 3340;
 
 #[global_allocator]
-static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+static GLOBAL: MiMalloc = MiMalloc;
 
 #[allow(non_upper_case_globals, unsafe_code)]
 #[export_name = "malloc_conf"]

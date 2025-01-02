@@ -26,17 +26,20 @@ derive_more = { version = "1.0.0", features = [
 dirs-next = "2.0.0"
 futures-lite = "2.5"
 governor = "0.6.3" #needs new release of tower_governor for 0.7.0
-hickory-server = { version = "=0.25.0-alpha.4", features = ["dns-over-rustls", "dns-over-https-rustls"] }
+hickory-server = { version = "=0.25.0-alpha.4", features = [
+    "dns-over-rustls",
+    "dns-over-https-rustls",
+] }
 http = "1.0.0"
 humantime-serde = "1.1.1"
 iroh-metrics = { version = "0.30.0" }
-jemalloc_pprof = { version = "0.6" }
-tikv-jemallocator = { version = "0.6.0", features = [
-  "profiling",
-  "unprefixed_malloc_on_supported_platforms",
-] }
 lru = "0.12.3"
-pkarr = { version = "2.2.0", features = [ "async", "relay", "dht"], default-features = false }
+mimalloc = "0.1"
+pkarr = { version = "2.2.0", features = [
+    "async",
+    "relay",
+    "dht",
+], default-features = false }
 rcgen = "0.13"
 redb = "2.0.0"
 regex = "1.10.3"
@@ -45,7 +48,7 @@ rustls-pemfile = { version = "2.1" }
 serde = { version = "1", features = ["derive"] }
 struct_iterable = "0.1.1"
 strum = { version = "0.26", features = ["derive"] }
-timedmap = { git = "https://github.com/PaulOlteanu/timedmap-rs", rev = "a02cc25"}
+timedmap = { git = "https://github.com/PaulOlteanu/timedmap-rs", rev = "a02cc25" }
 tokio = { version = "1", features = ["full"] }
 tokio-rustls = { version = "0.26", default-features = false, features = [
     "logging",
