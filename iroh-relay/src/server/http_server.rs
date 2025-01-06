@@ -16,7 +16,7 @@ use hyper::{
 };
 use iroh_metrics::inc;
 use tokio::{
-    net::{TcpListener, TcpStream},
+    net::{TcpListener, TcpSocket, TcpStream},
     sync::mpsc,
 };
 use tokio_rustls_acme::AcmeAcceptor;
@@ -221,6 +221,7 @@ impl ServerBuilder {
     }
 
     /// Builds and spawns an HTTP(S) Relay Server.
+    #[allow(clippy::unused_async)]
     pub(super) async fn spawn(self) -> Result<Server> {
         let server_task = ServerActorTask::spawn();
         let service = RelayService::new(
@@ -232,14 +233,20 @@ impl ServerBuilder {
             KeyCache::new(self.key_cache_capacity),
         );
 
-        let addr = self.addr;
         let tls_config = self.tls_config;
 
         // Bind a TCP listener on `addr` and handles content using HTTPS.
+        let socket = if self.addr.is_ipv4() {
+            TcpSocket::new_v4()?
+        } else {
+            TcpSocket::new_v6()?
+        };
+        socket.bind(self.addr)?;
+        let listener = socket.listen(2048)?;
 
-        let listener = TcpListener::bind(&addr)
-            .await
-            .with_context(|| format!("failed to bind server socket to {addr}"))?;
+        // let listener = TcpListener::bind(&addr)
+        //     .await
+        //     .with_context(|| format!("failed to bind server socket to {addr}"))?;
 
         // we will use this cancel token to stop the infinite loop in the `listener.accept() task`
         let cancel_server_loop = CancellationToken::new();
