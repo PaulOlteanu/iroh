@@ -247,7 +247,7 @@ impl ServerBuilder {
         socket.set_nodelay(true)?;
         socket.bind(addr)?;
         let listener = socket
-            .listen(2048)
+            .listen(8192)
             .with_context(|| format!("failed to bind server socket to {addr}"))?;
 
         // let listener = TcpListener::bind(&addr)
