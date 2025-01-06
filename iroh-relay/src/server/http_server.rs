@@ -243,6 +243,8 @@ impl ServerBuilder {
         } else {
             TcpSocket::new_v6()?
         };
+        socket.set_reuseaddr(true)?;
+        socket.set_nodelay(true)?;
         socket.bind(addr)?;
         let listener = socket
             .listen(2048)
