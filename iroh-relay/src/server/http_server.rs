@@ -2,7 +2,7 @@ use std::{
     collections::HashMap, future::Future, net::SocketAddr, pin::Pin, sync::Arc, time::Duration,
 };
 
-use anyhow::{bail, ensure, Context as _, Result};
+use anyhow::{bail, ensure, Context, Result};
 use bytes::Bytes;
 use derive_more::Debug;
 use futures_lite::FutureExt;
@@ -235,14 +235,18 @@ impl ServerBuilder {
 
         let tls_config = self.tls_config;
 
+        let addr = self.addr;
+
         // Bind a TCP listener on `addr` and handles content using HTTPS.
-        let socket = if self.addr.is_ipv4() {
+        let socket = if addr.is_ipv4() {
             TcpSocket::new_v4()?
         } else {
             TcpSocket::new_v6()?
         };
-        socket.bind(self.addr)?;
-        let listener = socket.listen(2048)?;
+        socket.bind(addr)?;
+        let listener = socket
+            .listen(2048)
+            .with_context(|| format!("failed to bind server socket to {addr}"))?;
 
         // let listener = TcpListener::bind(&addr)
         //     .await
