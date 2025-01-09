@@ -51,6 +51,7 @@ pub(crate) mod resolver;
 pub(crate) mod streams;
 #[cfg(feature = "test-utils")]
 pub mod testing;
+mod timeout_io;
 
 pub use self::{
     metrics::{Metrics, StunMetrics},

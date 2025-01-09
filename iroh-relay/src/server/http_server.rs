@@ -15,6 +15,7 @@ use hyper::{
     upgrade::Upgraded,
     HeaderMap, Method, Request, Response, StatusCode,
 };
+use hyper_util::rt::TokioIo;
 use iroh_metrics::inc;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_rustls_acme::AcmeAcceptor;
@@ -25,7 +26,7 @@ use tokio_tungstenite::{
 use tokio_util::{codec::Framed, sync::CancellationToken, task::AbortOnDropHandle};
 use tracing::{debug, debug_span, error, info, info_span, trace, warn, Instrument};
 
-use super::{clients::Clients, AccessConfig};
+use super::{clients::Clients, timeout_io::TimeoutIo, AccessConfig};
 use crate::{
     defaults::{timeouts::SERVER_WRITE_TIMEOUT, DEFAULT_KEY_CACHE_CAPACITY},
     http::{Protocol, LEGACY_RELAY_PATH, RELAY_PATH, SUPPORTED_WEBSOCKET_VERSION},
@@ -662,10 +663,18 @@ impl RelayService {
     where
         I: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + Sync + 'static,
     {
+        let io = Box::pin(TimeoutIo::new(
+            io,
+            Duration::from_secs(30),
+            Duration::from_secs(30),
+        ));
+        let io = TokioIo::new(io);
+
         hyper::server::conn::http1::Builder::new()
-            .serve_connection(hyper_util::rt::TokioIo::new(io), self)
+            .serve_connection(io, self)
             .with_upgrades()
             .await?;
+
         Ok(())
     }
 }
