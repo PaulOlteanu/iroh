@@ -455,6 +455,15 @@ async fn main() -> Result<()> {
         .with(EnvFilter::from_default_env())
         .init();
 
+    let prometheus_address = SocketAddr::new(
+        std::net::IpAddr::V4(std::net::Ipv4Addr::new(0, 0, 0, 0)),
+        6667,
+    );
+    metrics_exporter_prometheus::PrometheusBuilder::new()
+        .with_http_listener(prometheus_address)
+        .install()
+        .unwrap();
+
     let cli = Cli::parse();
     let mut cfg = Config::load(&cli).await?;
     if cfg.enable_quic_addr_discovery && cfg.tls.is_none() {

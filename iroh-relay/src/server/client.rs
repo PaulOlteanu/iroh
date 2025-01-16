@@ -9,6 +9,7 @@ use futures_sink::Sink;
 use futures_util::{SinkExt, Stream, StreamExt};
 use iroh_base::NodeId;
 use iroh_metrics::{inc, inc_by};
+use metrics::gauge;
 use rand::Rng;
 use tokio::{
     sync::mpsc::{self, error::TrySendError},
@@ -23,7 +24,7 @@ use crate::{
         relay::{write_frame, Frame, PING_INTERVAL},
     },
     server::{clients::Clients, metrics::Metrics, streams::RelayedStream, ClientRateLimit},
-    PingTracker,
+    DecOnDrop, PingTracker,
 };
 
 /// A request to write a dataframe to a Client
@@ -65,6 +66,7 @@ pub(super) struct Client {
     disco_send_queue: mpsc::Sender<Packet>,
     /// Channel to notify the client that a previous sender has disconnected.
     peer_gone: mpsc::Sender<NodeId>,
+    _g: DecOnDrop,
 }
 
 impl Client {
@@ -72,6 +74,9 @@ impl Client {
     /// the client
     /// Call [`Client::shutdown`] to close the read and write loops before dropping the [`Client`]
     pub(super) fn new(config: Config, connection_id: u64, clients: &Clients) -> Client {
+        let handle = gauge!("client_count");
+        handle.increment(1);
+        let g = DecOnDrop(handle);
         let Config {
             node_id,
             stream: io,
@@ -126,6 +131,7 @@ impl Client {
             send_queue: send_queue_s,
             disco_send_queue: disco_send_queue_s,
             peer_gone: peer_gone_s,
+            _g: g,
         }
     }
 
@@ -212,6 +218,10 @@ struct Actor {
 
 impl Actor {
     async fn run(mut self, done: CancellationToken) {
+        let handle = gauge!("actor_count");
+        handle.increment(1);
+        let _guard = DecOnDrop(handle);
+
         match self.run_inner(done).await {
             Err(e) => {
                 warn!("actor errored {e:#?}, exiting");

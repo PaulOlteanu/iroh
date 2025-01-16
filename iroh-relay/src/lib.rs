@@ -47,9 +47,18 @@ pub(crate) use key_cache::KeyCache;
 #[cfg(test)]
 mod dns;
 
+use metrics::Gauge;
 pub use protos::relay::MAX_PACKET_SIZE;
 
 pub use self::{
     ping_tracker::PingTracker,
     relay_map::{RelayMap, RelayNode, RelayQuicConfig},
 };
+
+#[derive(Debug)]
+pub(crate) struct DecOnDrop(Gauge);
+impl Drop for DecOnDrop {
+    fn drop(&mut self) {
+        self.0.decrement(1);
+    }
+}

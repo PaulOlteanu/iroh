@@ -37,6 +37,10 @@ hyper = { version = "1", features = ["server", "client", "http1"] }
 hyper-util = "0.1.1"
 iroh-base = { version = "0.31.0", path = "../iroh-base", default-features = false, features = ["key", "relay"] }
 iroh-metrics = { version = "0.31", default-features = false }
+metrics = "0.24"
+metrics-exporter-prometheus = { version = "0.16", default-features = false, features = [
+  "http-listener",
+] }
 num_enum = "0.7"
 pin-project = "1"
 postcard = { version = "1", default-features = false, features = [

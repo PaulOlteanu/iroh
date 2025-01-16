@@ -16,6 +16,7 @@ use hyper::{
     HeaderMap, Method, Request, Response, StatusCode,
 };
 use iroh_metrics::inc;
+use metrics::gauge;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_rustls_acme::AcmeAcceptor;
 use tokio_tungstenite::{
@@ -38,7 +39,7 @@ use crate::{
         streams::{MaybeTlsStream, RelayedStream},
         ClientRateLimit,
     },
-    KeyCache,
+    DecOnDrop, KeyCache,
 };
 
 type BytesBody = http_body_util::Full<hyper::body::Bytes>;
@@ -279,6 +280,10 @@ impl ServerBuilder {
                                 let service = service.clone();
                                 // spawn a task to handle the connection
                                 set.spawn(async move {
+                                    let handle = gauge!("handle_connection_tasks");
+                                    handle.increment(1);
+                                    let _guard = DecOnDrop(handle);
+
                                     service
                                         .handle_connection(stream, tls_config)
                                         .await
@@ -387,6 +392,10 @@ impl RelayService {
                 // waiting for it to complete to then return a response.
                 tokio::task::spawn(
                     async move {
+                        let handle = gauge!("upgrade_tasks");
+                        handle.increment(1);
+                        let _guard = DecOnDrop(handle);
+
                         match hyper::upgrade::on(&mut req).await {
                             Ok(upgraded) => {
                                 if let Err(err) =
@@ -625,6 +634,10 @@ impl RelayService {
 
     /// Serve the tls connection
     async fn tls_serve_connection(self, stream: TcpStream, tls_config: TlsConfig) -> Result<()> {
+        let handle = gauge!("tls_serve_connection");
+        handle.increment(1);
+        let _guard = DecOnDrop(handle);
+
         let TlsConfig { acceptor, config } = tls_config;
         match acceptor {
             TlsAcceptor::LetsEncrypt(a) => match a.accept(stream).await? {
