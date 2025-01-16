@@ -14,11 +14,12 @@ use bytes::Bytes;
 use dashmap::DashMap;
 use iroh_base::NodeId;
 use iroh_metrics::inc;
+use metrics::{counter, gauge};
 use tokio::sync::mpsc::error::TrySendError;
 use tracing::{debug, trace};
 
 use super::client::{Client, Config};
-use crate::server::metrics::Metrics;
+use crate::{server::metrics::Metrics, DecOnDrop};
 
 /// Manages the connections to all currently connected clients.
 #[derive(Debug, Default, Clone)]
@@ -48,18 +49,25 @@ impl Clients {
 
     /// Builds the client handler and starts the read & write loops for the connection.
     pub async fn register(&self, client_config: Config) {
+        counter!("clients_registered").increment(1);
         let node_id = client_config.node_id;
         let connection_id = self.get_connection_id();
         trace!(remote_node = node_id.fmt_short(), "registering client");
 
         let client = Client::new(client_config, connection_id, self);
         if let Some(old_client) = self.0.clients.insert(node_id, client) {
+            counter!("client_replaced").increment(1);
+            let handle = gauge!("waiting_to_shutdown");
+            handle.increment(1);
+            let _guard = DecOnDrop(handle);
             debug!(
                 remote_node = node_id.fmt_short(),
                 "multiple connections found, pruning old connection",
             );
             old_client.shutdown().await;
         }
+        let num_clients = self.0.clients.len();
+        gauge!("num_clients_registered").set(num_clients as f64);
     }
 
     fn get_connection_id(&self) -> u64 {
@@ -72,6 +80,7 @@ impl Clients {
     ///
     /// Must be passed a matching connection_id.
     pub(super) async fn unregister(&self, connection_id: u64, node_id: NodeId) {
+        counter!("clients_unregistered").increment(1);
         trace!(
             node_id = node_id.fmt_short(),
             connection_id,
