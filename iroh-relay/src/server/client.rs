@@ -142,14 +142,9 @@ impl Client {
     /// Shutdown the reader and writer loops and closes the connection.
     ///
     /// Any shutdown errors will be logged as warnings.
+    #[allow(clippy::unused_async)]
     pub(super) async fn shutdown(self) {
         self.start_shutdown();
-        if let Err(e) = self.handle.await {
-            warn!(
-                remote_node = %self.node_id.fmt_short(),
-                "error closing actor loop: {e:#?}",
-            );
-        };
     }
 
     /// Starts the process of shutdown.
