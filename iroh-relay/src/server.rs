@@ -30,7 +30,7 @@ use iroh_base::NodeId;
 use iroh_base::RelayUrl;
 use iroh_metrics::inc;
 use tokio::{
-    net::{TcpListener, UdpSocket},
+    net::{TcpListener, TcpSocket, UdpSocket},
     task::JoinSet,
 };
 use tokio_util::task::AbortOnDropHandle;
@@ -397,11 +397,18 @@ impl Server {
                         };
                         builder = builder.tls_config(server_tls_config);
 
-                        // Some services always need to be served over HTTP without TLS.  Run
-                        // these standalone.
-                        let http_listener = TcpListener::bind(&relay_config.http_bind_addr)
-                            .await
-                            .context("failed to bind http")?;
+                        let http_socket = if relay_config.http_bind_addr.is_ipv4() {
+                            TcpSocket::new_v4()?
+                        } else {
+                            TcpSocket::new_v6()?
+                        };
+                        http_socket.set_reuseaddr(true)?;
+                        http_socket.set_nodelay(true)?;
+                        http_socket.bind(relay_config.http_bind_addr)?;
+                        let http_listener = http_socket
+                            .listen(8192)
+                            .with_context(|| "failed to bind http".to_string())?;
+
                         let http_addr = http_listener.local_addr()?;
                         tasks.spawn(
                             run_captive_portal_service(http_listener)
