@@ -16,7 +16,7 @@ use hyper::{
     HeaderMap, Method, Request, Response, StatusCode,
 };
 use iroh_metrics::inc;
-use tokio::net::{TcpListener, TcpStream};
+use tokio::net::{TcpSocket, TcpStream};
 use tokio_rustls_acme::AcmeAcceptor;
 use tokio_tungstenite::{
     tungstenite::{handshake::derive_accept_key, protocol::Role},
@@ -230,6 +230,7 @@ impl ServerBuilder {
     }
 
     /// Builds and spawns an HTTP(S) Relay Server.
+    #[allow(clippy::unused_async)]
     pub(super) async fn spawn(self) -> Result<Server> {
         let cancel_token = CancellationToken::new();
 
@@ -245,9 +246,16 @@ impl ServerBuilder {
         let tls_config = self.tls_config;
 
         // Bind a TCP listener on `addr` and handles content using HTTPS.
-
-        let listener = TcpListener::bind(&addr)
-            .await
+        let socket = if addr.is_ipv4() {
+            TcpSocket::new_v4()?
+        } else {
+            TcpSocket::new_v6()?
+        };
+        socket.set_reuseaddr(true)?;
+        socket.set_nodelay(true)?;
+        socket.bind(addr)?;
+        let listener = socket
+            .listen(8192)
             .with_context(|| format!("failed to bind server socket to {addr}"))?;
 
         let addr = listener.local_addr()?;
