@@ -16,7 +16,9 @@
 //! - HTTPS `/generate_204`: Used for net_report probes.
 //! - STUN: UDP port for STUN requests/responses.
 
-use std::{fmt, future::Future, net::SocketAddr, num::NonZeroU32, pin::Pin, sync::Arc};
+use std::{
+    fmt, future::Future, net::SocketAddr, num::NonZeroU32, pin::Pin, sync::Arc, time::Duration,
+};
 
 use anyhow::{anyhow, bail, Context, Result};
 use derive_more::Debug;
@@ -25,6 +27,7 @@ use http::{
     response::Builder as ResponseBuilder, HeaderMap, Method, Request, Response, StatusCode,
 };
 use hyper::body::Incoming;
+use hyper_util::rt::TokioTimer;
 use iroh_base::NodeId;
 #[cfg(feature = "test-utils")]
 use iroh_base::RelayUrl;
@@ -764,6 +767,8 @@ async fn run_captive_portal_service(http_listener: TcpListener) -> Result<()> {
                             let stream = crate::server::streams::MaybeTlsStream::Plain(stream);
                             let stream = hyper_util::rt::TokioIo::new(stream);
                             if let Err(err) = hyper::server::conn::http1::Builder::new()
+                                .timer(TokioTimer::new())
+                                .header_read_timeout(Duration::from_secs(15))
                                 .serve_connection(stream, handler)
                                 .with_upgrades()
                                 .await
