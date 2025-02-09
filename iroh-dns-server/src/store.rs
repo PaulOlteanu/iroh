@@ -11,14 +11,15 @@ use tokio::sync::Mutex;
 use tracing::{debug, trace};
 use ttl_cache::TtlCache;
 
-use self::signed_packets::SignedPacketStore;
 use crate::{
     config::BootstrapOption,
     metrics::Metrics,
     util::{signed_packet_to_hickory_records_without_origin, PublicKeyBytes},
 };
 
+mod moka;
 mod signed_packets;
+use moka::MokaStore;
 pub use signed_packets::Options as ZoneStoreOptions;
 
 /// Cache up to 1 million pkarr zones by default
@@ -39,21 +40,19 @@ pub enum PacketSource {
 #[derive(Debug, Clone)]
 pub struct ZoneStore {
     cache: Arc<Mutex<ZoneCache>>,
-    store: Arc<SignedPacketStore>,
+    store: Arc<MokaStore>,
     pkarr: Option<Arc<PkarrClient>>,
 }
 
 impl ZoneStore {
     /// Create a persistent store
-    pub fn persistent(path: impl AsRef<Path>, options: ZoneStoreOptions) -> Result<Self> {
-        let packet_store = SignedPacketStore::persistent(path, options)?;
-        Ok(Self::new(packet_store))
+    pub fn persistent(_path: impl AsRef<Path>, _options: ZoneStoreOptions) -> Result<Self> {
+        unimplemented!()
     }
 
     /// Create an in-memory store.
-    pub fn in_memory(options: ZoneStoreOptions) -> Result<Self> {
-        let packet_store = SignedPacketStore::in_memory(options)?;
-        Ok(Self::new(packet_store))
+    pub fn in_memory(_options: ZoneStoreOptions) -> Result<Self> {
+        Ok(Self::new())
     }
 
     /// Configure a pkarr client for resolution of packets from the bittorrent mainline DHT.
@@ -80,7 +79,8 @@ impl ZoneStore {
     }
 
     /// Create a new zone store.
-    pub fn new(store: SignedPacketStore) -> Self {
+    pub fn new() -> Self {
+        let store = MokaStore::new();
         let zone_cache = ZoneCache::new(DEFAULT_CACHE_CAPACITY);
         Self {
             store: Arc::new(store),

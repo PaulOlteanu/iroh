@@ -35,6 +35,7 @@ tikv-jemallocator = { version = "0.6.0", features = [
   "unprefixed_malloc_on_supported_platforms",
 ] }
 lru = "0.12.3"
+moka = { version = "0.12", features = ["future"] }
 n0-future = "0.1.2"
 pkarr = { version = "2.3.1", features = [ "async", "relay", "dht"], default-features = false }
 rcgen = "0.13"
